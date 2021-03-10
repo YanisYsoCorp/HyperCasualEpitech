@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bfcf417bceeba474b8d12501c906cef3, type: 3}
+  m_Name: YCConfigData
+  m_EditorClassIdentifier: 
+  gameYcId: 
+  Vibration: 0
+  VibrationDebugLog: 0
+  SoundEffect: 0
+  SoundMusic: 0
+  InAppRemoveAds: 
+  InAppRemoveAdsCanRemoveInBanner: 1
+  InAppConsumables: []
+  ABVersion: 1
+  ABPercentMax: 1
+  ABPercent: 0.05
+  ABForcedSample: 
+  ABSamples: []
+  RateBoxShow: 0
+  InterstitialInterval: 30
+  Name: 
+  FbAppId: 
+  appleId: 
+  MmpAdjust: 0
+  MmpAdjustAppToken: 
+  MmpSingular: 0
+  MmpTenjin: 0
+  IosInterstitial: 
+  IosRewarded: 
+  IosBanner: 
+  AndroidInterstitial: 
+  AndroidRewarded: 
+  AndroidBanner: 
+  MaxForceInit: 0

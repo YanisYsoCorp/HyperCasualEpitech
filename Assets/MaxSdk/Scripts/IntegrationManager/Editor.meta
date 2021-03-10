@@ -1,0 +1,12 @@
+fileFormatVersion: 2
+guid: 67d8e63aa88f040a5a06f5416ea4a1b8
+labels:
+- al_max
+- al_max_export_path-MaxSdk/Scripts/IntegrationManager/Editor
+- al_max_export_path-MaxSdk\Scripts\IntegrationManager\Editor
+folderAsset: yes
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

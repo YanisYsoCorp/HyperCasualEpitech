@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<dependencies>
-    <androidPackages>
-        <androidPackage spec="com.applovin.mediation:bytedance-adapter:3.4.1.1.2" />
-    </androidPackages>
-    <iosPods>
-        <iosPod name="AppLovinMediationByteDanceAdapter" version="3.4.2.3.0" />
-    </iosPods>
-</dependencies>

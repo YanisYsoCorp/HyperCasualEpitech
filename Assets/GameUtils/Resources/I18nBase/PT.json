@@ -1,7 +1,14 @@
 ﻿{
-    "Setting": "Configuração",
+    "Settings": "Configuração",
     "Close": "Fechar",
     "Data privacy": "Dados privados",
     "Restore purchase": "Restaurar compra",
-    "Play": "Jogar"
+    "Play": "Jogar",
+    "Retry": "Tentar novamente",
+    "Next": "Próximo",
+    "Win": "Ganhou",
+    "Lose": "Perdido",
+    "Yes": "Sim",
+    "No": "Não",
+    "No Internet Connection": "sem conexão de internet"
 }

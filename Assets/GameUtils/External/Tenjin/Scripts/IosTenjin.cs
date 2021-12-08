@@ -190,9 +190,9 @@ public class IosTenjin : BaseTenjin {
 		iosTenjinRequestTrackingAuthorizationWithCompletionHandler();
 	}
 
-	public override void GetTrackingAuthorizationStatus(string status){
+	private void SetTrackingAuthorizationStatus(string status){
 		if (Debug.isDebugBuild) {
-			Debug.Log ("iOS GetTrackingAuthorizationStatus " + status);
+			Debug.Log ("iOS SetTrackingAuthorizationStatus " + status);
 		}
 		Tenjin.authorizationStatusDelegate(Int16.Parse(status));
 	}
@@ -234,6 +234,9 @@ public class IosTenjin : BaseTenjin {
 			}
 			iosTenjinTransaction(productId, currencyCode, quantity, unitPrice);
 		}
+	}
+
+	public override void SetAppStoreType(AppStoreType appStoreType) {
 	}
 
     public override void SubscribeMoPubImpressions(){
@@ -413,11 +416,6 @@ public class IosTenjin : BaseTenjin {
 		Debug.Log("iOS RequestTrackingAuthorizationWithCompletionHandler");
 	}
 
-	public override void GetTrackingAuthorizationStatus(string status)
-    {
-		Debug.Log("iOS GetTrackingAuthorizationStatus");
-	}
-
 	public override void AppendAppSubversion(int subversion){
 		Debug.Log("iOS AppendAppSubversion");
 	}
@@ -430,5 +428,9 @@ public class IosTenjin : BaseTenjin {
     {
         Debug.Log("iOS SubscribeMoPubImpressions");
     }
+
+	public override void SetAppStoreType(AppStoreType appStoreType) {
+		Debug.Log("iOS SetAppStoreType");
+	}
 #endif
 }

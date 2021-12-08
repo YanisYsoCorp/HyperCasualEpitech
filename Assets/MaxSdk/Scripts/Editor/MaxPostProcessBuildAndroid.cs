@@ -8,10 +8,8 @@
 
 #if UNITY_ANDROID && UNITY_2018_2_OR_NEWER
 
-#if UNITY_2019_3_OR_NEWER
 using System;
 using System.Collections.Generic;
-#endif
 using System.IO;
 using System.Linq;
 using System.Xml.Linq;
@@ -30,13 +28,17 @@ namespace AppLovinMax.Scripts.Editor
         private const string PropertyJetifier = "android.enableJetifier";
         private const string EnableProperty = "=true";
 #endif
+        private const string PropertyDexingArtifactTransform = "android.enableDexingArtifactTransform";
+        private const string DisableProperty = "=false";
         private const string AppLovinVerboseLoggingOnKey = "applovin.sdk.verbose_logging";
 
         public void OnPostGenerateGradleAndroidProject(string path)
         {
 #if UNITY_2019_3_OR_NEWER
             var gradlePropertiesPath = Path.Combine(path, "../gradle.properties");
-
+#else
+            var gradlePropertiesPath = Path.Combine(path, "gradle.properties");
+#endif
             var gradlePropertiesUpdated = new List<string>();
 
             // If the gradle properties file already exists, make sure to add any previous properties.
@@ -44,13 +46,22 @@ namespace AppLovinMax.Scripts.Editor
             {
                 var lines = File.ReadAllLines(gradlePropertiesPath);
 
-                // Add all properties except AndroidX and Jetifier, since they could be disabled. We will add them below with those properties enabled.
-                gradlePropertiesUpdated.AddRange(lines.Where(line => !line.Contains(PropertyAndroidX) && !line.Contains(PropertyJetifier)));
+#if UNITY_2019_3_OR_NEWER
+                // Add all properties except AndroidX, Jetifier, and DexingArtifactTransform since they may already exist. We will re-add them below.
+                gradlePropertiesUpdated.AddRange(lines.Where(line => !line.Contains(PropertyAndroidX) && !line.Contains(PropertyJetifier) && !line.Contains(PropertyDexingArtifactTransform)));
+#else
+                // Add all properties except DexingArtifactTransform since it may already exist. We will re-add it below.
+                gradlePropertiesUpdated.AddRange(lines.Where(line => !line.Contains(PropertyDexingArtifactTransform)));
+#endif
             }
 
+#if UNITY_2019_3_OR_NEWER
             // Enable AndroidX and Jetifier properties 
             gradlePropertiesUpdated.Add(PropertyAndroidX + EnableProperty);
             gradlePropertiesUpdated.Add(PropertyJetifier + EnableProperty);
+#endif
+            // Disable dexing using artifact transform (it causes issues for ExoPlayer with Gradle plugin 3.5.0+)
+            gradlePropertiesUpdated.Add(PropertyDexingArtifactTransform + DisableProperty);
 
             try
             {
@@ -61,8 +72,7 @@ namespace AppLovinMax.Scripts.Editor
                 MaxSdkLogger.UserError("Failed to enable AndroidX and Jetifier. gradle.properties file write failed.");
                 Console.WriteLine(exception);
             }
-#endif
-
+            
             EnableVerboseLoggingIfNeeded(path);
         }
 

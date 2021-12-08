@@ -1,7 +1,14 @@
 ﻿{
-    "Setting": "Cài đặt",
+    "Settings": "Cài đặt",
     "Close": "Đóng",
     "Data privacy": "Bảo mật dữ liệu",
     "Restore purchase": "Khôi phục đơn hàng",
-    "Play": "Bắt đầu"
+    "Play": "Bắt đầu",
+    "Retry": "Thử lại",
+    "Next": "Kế tiếp",
+    "Win": "Thắng lợi",
+    "Lose": "Thua",
+    "Yes": "Có",
+    "No": "Không",
+    "No Internet Connection": "không có kết nối Internet"
 }

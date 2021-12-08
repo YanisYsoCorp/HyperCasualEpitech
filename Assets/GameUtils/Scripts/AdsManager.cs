@@ -16,6 +16,9 @@ namespace YsoCorp {
             public Image iBanner;
             public Button bRemoveAds;
 
+            public bool rewardedVisible { get; set; }
+            public bool interstitialVisible { get; set; }
+
             private Action<bool> aRewarded = null;
             private Action aInterstitial = null;
             private bool _finishRewarded = false;
@@ -31,6 +34,11 @@ namespace YsoCorp {
             private bool _hasDataPrivacy = false;
             private bool _canDisplayInterstitial = false;
 
+            private MaxSdkBase.SdkConfiguration _sdkConfiguration;
+
+            private float _onDisplayTimeScale;
+
+
             protected override void Awake() {
                 base.Awake();
                 this.bRemoveAds.onClick.AddListener(() => {
@@ -39,39 +47,53 @@ namespace YsoCorp {
                 this.iBanner.gameObject.SetActive(false);
                 this.iInterstitial.gameObject.SetActive(false);
                 if (this.GetInterstitialKey() != "" || this.GetRewardedKey() != "" || this.GetBannerKey() != "") {
-                    MaxSdkCallbacks.OnSdkInitializedEvent += (MaxSdkBase.SdkConfiguration sdkConfiguration) => {
-                        if (sdkConfiguration.ConsentDialogState == MaxSdkBase.ConsentDialogState.Applies) {
-                            this._hasDataPrivacy = true;
-                            if (this.ycManager.dataManager.GetGdprValidate() == false) {
-                                this.InitAds();
-                                this.DisplayGDPR();
-                            } else {
-                                this.InitConsentAndAds();
-                            }
-                        } else if (sdkConfiguration.ConsentDialogState == MaxSdkBase.ConsentDialogState.DoesNotApply) {
-                            this.InitConsentAndAds();
-                        } else {
-#if UNITY_EDITOR
-                            this._hasDataPrivacy = true;
-                            if (this.ycManager.dataManager.GetGdprValidate() == false) {
-                                this.InitAds();
-                                this.DisplayGDPR();
-                            } else {
-                                this.InitConsentAndAds();
-                            }
-#else
-                            this.InitConsentAndAds();
-#endif
-                        }
-                    };
+                    MaxSdkCallbacks.OnSdkInitializedEvent += this.OnSdkInitializedEvent;
                     MaxSdk.SetSdkKey(SDK_KEY);
+                    MaxSdk.SetUserId(this.ycManager.ycConfig.deviceKey);
                     MaxSdk.InitializeSdk();
                 } else {
-                    if (this.ycManager.ycConfig.MaxForceInit) {
-                        MaxSdk.SetSdkKey(SDK_KEY);
-                        MaxSdk.InitializeSdk();
-                    }
                     this.ycManager.ycConfig.LogWarning("[Ads] not init");
+                }
+#if UNITY_EDITOR
+                this._hasDataPrivacy = true;
+#endif
+            }
+
+            public bool IsInterstitialOrRewardedVisible() {
+                return this.rewardedVisible || this.interstitialVisible;
+            }
+
+            public string GetAppTrackingStatus() {
+#if UNITY_IOS
+                if (this._sdkConfiguration != null) {
+                    return this._sdkConfiguration.AppTrackingStatus.ToString();
+                }
+#endif
+                return "";
+            }
+
+            public AnalyticsManager.AdData OnAdRevenuePaidEvent(string adUnitId, MaxSdkBase.AdInfo adInfo) {
+                AnalyticsManager.AdData adData = new AnalyticsManager.AdData();
+                adData.revenue = (float)adInfo.Revenue;
+                adData.country_code = MaxSdk.GetSdkConfiguration().CountryCode;
+                adData.network_name = adInfo.NetworkName;
+                adData.network_placement = adInfo.NetworkPlacement;
+                adData.placement = adInfo.Placement;
+                adData.ad_unit_id = adInfo.AdUnitIdentifier;
+                adData.creative_id = adInfo.CreativeIdentifier;
+                return adData;
+            }
+
+            void OnSdkInitializedEvent(MaxSdkBase.SdkConfiguration sdkConfiguration) {
+                this._sdkConfiguration = sdkConfiguration;
+                this.ycManager.mmpManager.Init();
+                if (sdkConfiguration.ConsentDialogState == MaxSdkBase.ConsentDialogState.Applies) {
+                    this._hasDataPrivacy = true;
+                    this.InitConsentAndAds();
+                } else if (sdkConfiguration.ConsentDialogState == MaxSdkBase.ConsentDialogState.DoesNotApply) {
+                    this.InitConsentAndAds();
+                } else {
+                    this.InitConsentAndAds();
                 }
             }
 
@@ -115,7 +137,15 @@ namespace YsoCorp {
                 this.InitializeBannerAds();
                 this.InitializeInterstitialAds();
                 this.InitializeRewardedAds();
+            }
 
+            public void TimeScaleOff() {
+                this._onDisplayTimeScale = Time.timeScale;
+                Time.timeScale = 0f;
+            }
+
+            public void TimeScaleOn() {
+                Time.timeScale = this._onDisplayTimeScale;
             }
 
             public void DisplayGDPR() {
@@ -127,8 +157,6 @@ namespace YsoCorp {
                     }
                     this.ycManager.gdprManager.Show(() => {
                         this.InitConsent();
-                        this.LoadRewardedAd();
-                        this.LoadInterstitial();
                         if (hide == true) {
                             this.HideBanner(true);
                             this.HideBanner(false);
@@ -147,26 +175,34 @@ namespace YsoCorp {
                     this._isEnableRewarded = true;
 #endif
 
-                    MaxSdkCallbacks.OnRewardedAdLoadedEvent += (string adUnitId) => { };
-                    MaxSdkCallbacks.OnRewardedAdReceivedRewardEvent += (string adUnitId, MaxSdkBase.Reward reward) => {
+                    MaxSdkCallbacks.Rewarded.OnAdLoadedEvent += (string adUnitId, MaxSdkBase.AdInfo adInfo) => { };
+                    MaxSdkCallbacks.Rewarded.OnAdReceivedRewardEvent += (string adUnitId, MaxSdkBase.Reward reward, MaxSdkBase.AdInfo adInfo) => {
                         this._finishRewarded = true;
                     };
-                    MaxSdkCallbacks.OnRewardedAdHiddenEvent += (string adUnitId) => {
+                    MaxSdkCallbacks.Rewarded.OnAdHiddenEvent += (string adUnitId, MaxSdkBase.AdInfo adInfo) => {
+                        this.rewardedVisible = false;
+                        this.TimeScaleOn();
                         this.LoadRewardedAd();
                         this.ycManager.soundManager.UnPauseMusic();
                         this.aRewarded(this._finishRewarded);
                     };
-                    MaxSdkCallbacks.OnRewardedAdLoadFailedEvent += (string adUnitId, int errorCode) => {
+                    MaxSdkCallbacks.Rewarded.OnAdLoadFailedEvent += (string adUnitId, MaxSdkBase.ErrorInfo errorInfo) => {
                         this.Invoke("LoadRewardedAd", 2f);
                     };
-                    MaxSdkCallbacks.OnRewardedAdFailedToDisplayEvent += (string adUnitId, int errorCode) => {
+                    MaxSdkCallbacks.Rewarded.OnAdDisplayFailedEvent += (string adUnitId, MaxSdkBase.ErrorInfo errorInfo, MaxSdkBase.AdInfo adInfo) => {
                         this.LoadRewardedAd();
                     };
-                    MaxSdkCallbacks.OnRewardedAdDisplayedEvent += (string adUnitId) => {
+                    MaxSdkCallbacks.Rewarded.OnAdDisplayedEvent += (string adUnitId, MaxSdkBase.AdInfo adInfo) => {
+                        this.rewardedVisible = true;
+                        this.TimeScaleOff();
                         this.ycManager.analyticsManager.RewardedShow();
+                        this.ycManager.dataManager.IncrementRewardedsNb();
                     };
-                    MaxSdkCallbacks.OnRewardedAdClickedEvent += (string adUnitId) => {
+                    MaxSdkCallbacks.Rewarded.OnAdClickedEvent += (string adUnitId, MaxSdkBase.AdInfo adInfo) => {
                         this.ycManager.analyticsManager.RewardedClick();
+                    };
+                    MaxSdkCallbacks.Rewarded.OnAdRevenuePaidEvent += (string adUnitId, MaxSdkBase.AdInfo adInfo) => {
+                        this.ycManager.analyticsManager.GetSession().ads_rewarded.Add(this.OnAdRevenuePaidEvent(adUnitId, adInfo));
                     };
                     this.LoadRewardedAd();
                 }
@@ -207,25 +243,33 @@ namespace YsoCorp {
                 if (this.GetInterstitialKey() != "") {
                     this._isEnableInterstitial = true;
                     this._delayInterstitial = this.GetInterstitialDelay();
-                    MaxSdkCallbacks.OnInterstitialLoadedEvent += (string adUnitId) => { };
-                    MaxSdkCallbacks.OnInterstitialLoadFailedEvent += (string adUnitId, int errorCode) => {
+                    MaxSdkCallbacks.Interstitial.OnAdLoadedEvent += (string adUnitId, MaxSdkBase.AdInfo adInfo) => { };
+                    MaxSdkCallbacks.Interstitial.OnAdLoadFailedEvent += (string adUnitId, MaxSdkBase.ErrorInfo errorInfo) => {
                         this.Invoke("LoadInterstitial", 2f);
                     };
-                    MaxSdkCallbacks.OnInterstitialAdFailedToDisplayEvent += (string adUnitId, int errorCode) => {
+                    MaxSdkCallbacks.Interstitial.OnAdDisplayFailedEvent += (string adUnitId, MaxSdkBase.ErrorInfo errorInfo, MaxSdkBase.AdInfo adInfo) => {
                         this.LoadInterstitial();
                     };
-                    MaxSdkCallbacks.OnInterstitialHiddenEvent += (string adUnitId) => {
+                    MaxSdkCallbacks.Interstitial.OnAdHiddenEvent += (string adUnitId, MaxSdkBase.AdInfo adInfo) => {
+                        this.interstitialVisible = false;
+                        this.TimeScaleOn();
                         this.LoadInterstitial();
                         this.ycManager.soundManager.UnPauseMusic();
                         this.iInterstitial.gameObject.SetActive(false);
                         this.aInterstitial();
                         this._delayInterstitial = this.GetInterstitialDelay();
                     };
-                    MaxSdkCallbacks.OnInterstitialDisplayedEvent += (string adUnitId) => {
+                    MaxSdkCallbacks.Interstitial.OnAdDisplayedEvent += (string adUnitId, MaxSdkBase.AdInfo adInfo) => {
+                        this.interstitialVisible = true;
+                        this.TimeScaleOff();
                         this.ycManager.analyticsManager.InterstitialShow();
+                        this.ycManager.dataManager.IncrementInterstitialsNb();
                     };
-                    MaxSdkCallbacks.OnInterstitialClickedEvent += (string adUnitId) => {
+                    MaxSdkCallbacks.Interstitial.OnAdClickedEvent += (string adUnitId, MaxSdkBase.AdInfo adInfo) => {
                         this.ycManager.analyticsManager.InterstitialClick();
+                    };
+                    MaxSdkCallbacks.Interstitial.OnAdRevenuePaidEvent += (string adUnitId, MaxSdkBase.AdInfo adInfo) => {
+                        this.ycManager.analyticsManager.GetSession().ads_interstitial.Add(this.OnAdRevenuePaidEvent(adUnitId, adInfo));
                     };
                     this.LoadInterstitial();
                 }
@@ -270,7 +314,18 @@ namespace YsoCorp {
                 if (this.GetBannerKey() != "") {
                     this._isEnableBanner = true;
                     MaxSdk.CreateBanner(this.GetBannerKey(), MaxSdkBase.BannerPosition.BottomCenter);
-                    this.HideBanner(false);
+                    MaxSdkCallbacks.Banner.OnAdClickedEvent += (string adUnitId, MaxSdkBase.AdInfo adInfo) => {
+                        this.ycManager.analyticsManager.BannerClick();
+                    };
+                    MaxSdkCallbacks.Banner.OnAdLoadedEvent += (string adUnitId, MaxSdkBase.AdInfo adInfo) => {
+                        this.ycManager.analyticsManager.BannerShow();
+                    };
+                    MaxSdkCallbacks.Banner.OnAdRevenuePaidEvent += (string adUnitId, MaxSdkBase.AdInfo adInfo) => {
+                        this.ycManager.analyticsManager.GetSession().ads_banner.Add(this.OnAdRevenuePaidEvent(adUnitId, adInfo));
+                    };
+                    if (this.ycManager.ycConfig.BannerDisplayOnInit) {
+                        this.HideBanner(false);
+                    }
                 }
             }
 

@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEditor;
 using UnityEditor.Callbacks;
 #if UNITY_IOS
@@ -44,6 +44,7 @@ public class BuildPostProcessor : MonoBehaviour
 
         List<string> frameworks = new List<string>();
 
+        frameworks.Add("AdServices.framework");
         frameworks.Add("AdSupport.framework");
         frameworks.Add("AppTrackingTransparency.framework");
         frameworks.Add("iAd.framework");

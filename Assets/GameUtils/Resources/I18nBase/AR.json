@@ -1,8 +1,14 @@
 ﻿{
-  "Setting": "اعدادات",
-  "Close": "اغلاق",
-  "Data privacy": "خصوصية البيانات",
-  "Restore purchase": "استعادة المشتريات",
-  "Play": "العب"
-
+    "Settings": "اعدادات",
+    "Close": "اغلاق",
+    "Data privacy": "خصوصية البيانات",
+    "Restore purchase": "استعادة المشتريات",
+    "Play": "العب",
+    "Retry": "أعد المحاولة",
+    "Next": "التالي",
+    "Win": "وون",
+    "Lose": "ضائع",
+    "Yes": "نعم",
+    "No": "لا",
+    "No Internet Connection": "لا يوجد اتصال بالإنترنت"
 }

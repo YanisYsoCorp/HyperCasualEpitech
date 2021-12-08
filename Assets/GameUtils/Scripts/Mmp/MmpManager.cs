@@ -22,6 +22,9 @@ namespace YsoCorp {
                 if (this.ycManager.ycConfig.MmpTenjin) {
                     this._mmps.Add(this.tenjinManager);
                 }
+            }
+
+            public void Init() {
                 foreach (MmpBaseManager mmp in this._mmps) {
                     mmp.gameObject.SetActive(true);
                     mmp.Init();

@@ -1,7 +1,14 @@
 ﻿{
-    "Setting": "Einstellungen",
+    "Settings": "Einstellungen",
     "Close": "Schließen",
     "Data privacy": "Datenprivatsphäre",
     "Restore purchase": "Kauf wiederherstellen",
-    "Play": "Abspielen"
+    "Play": "Abspielen",
+    "Retry": "Wiederholen",
+    "Next": "Nächster",
+    "Win": "Gewonnen",
+    "Lose": "Hat verloren",
+    "Yes": "Ja",
+    "No": "Nein",
+    "No Internet Connection": "keine Internetverbindung"
 }

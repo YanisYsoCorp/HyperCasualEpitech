@@ -49,7 +49,6 @@ namespace AppLovinMax.Scripts.IntegrationManager.Editor
         public string Name;
         public string DisplayName;
         public string DownloadUrl;
-        public string PluginFileName;
         public string DependenciesFilePath;
         public string[] PluginFilePaths;
         public Versions LatestVersions;
@@ -78,9 +77,22 @@ namespace AppLovinMax.Scripts.IntegrationManager.Editor
                    && (Ios == null || Ios.Equals(versions.Ios));
         }
 
+        public bool HasEqualSdkVersions(Versions versions)
+        {
+            return versions != null
+                   && AdapterSdkVersion(Android).Equals(AdapterSdkVersion(versions.Android))
+                   && AdapterSdkVersion(Ios).Equals(AdapterSdkVersion(versions.Ios));
+        }
+
         public override int GetHashCode()
         {
             return new {Unity, Android, Ios}.GetHashCode();
+        }
+
+        private static string AdapterSdkVersion(string adapterVersion)
+        {
+            var index = adapterVersion.LastIndexOf(".");
+            return index > 0 ? adapterVersion.Substring(0, index) : adapterVersion;
         }
     }
 
@@ -109,6 +121,7 @@ namespace AppLovinMax.Scripts.IntegrationManager.Editor
 
         public static readonly string GradleTemplatePath = Path.Combine("Assets/Plugins/Android", "mainTemplate.gradle");
         public static readonly string DefaultPluginExportPath = Path.Combine("Assets", "MaxSdk");
+        private const string DefaultMaxSdkAssetExportPath = "MaxSdk/Scripts/MaxSdk.cs";
         private static readonly string MaxSdkAssetExportPath = Path.Combine("MaxSdk", "Scripts/MaxSdk.cs");
 
         /// <summary>
@@ -121,6 +134,7 @@ namespace AppLovinMax.Scripts.IntegrationManager.Editor
         {
             "MaxSdk/Mediation",
             "MaxSdk/Mediation.meta",
+            "MaxSdk/Resources.meta",
             AppLovinSettings.SettingsExportPath,
             AppLovinSettings.SettingsExportPath + ".meta"
         };
@@ -146,7 +160,22 @@ namespace AppLovinMax.Scripts.IntegrationManager.Editor
         /// </summary>
         public static string PluginParentDirectory
         {
-            get { return MaxSdkUtils.GetAssetPathForExportPath(MaxSdkAssetExportPath).Replace(MaxSdkAssetExportPath, ""); }
+            get
+            {
+                // Search for the asset with the default exported path first, In most cases, we should be able to find the asset.
+                // In some cases where we don't, use the platform specific export path to search for the asset (in case of migrating a project from Windows to Mac or vice versa).
+                var maxSdkScriptAssetPath = MaxSdkUtils.GetAssetPathForExportPath(DefaultMaxSdkAssetExportPath);
+                if (File.Exists(maxSdkScriptAssetPath))
+                {
+                    // maxSdkScriptAssetPath will always have AltDirectorySeparatorChar (/) as the path separator. Convert to platform specific path.
+                    return maxSdkScriptAssetPath.Replace(DefaultMaxSdkAssetExportPath, "")
+                        .Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
+                }
+
+                // We should never reach this line but leaving this in out of paranoia.
+                return MaxSdkUtils.GetAssetPathForExportPath(MaxSdkAssetExportPath).Replace(MaxSdkAssetExportPath, "")
+                    .Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
+            }
         }
 
         /// <summary>
@@ -293,7 +322,6 @@ namespace AppLovinMax.Scripts.IntegrationManager.Editor
 
                 if (pluginData != null)
                 {
-
                     // Get current version of the plugin
                     var appLovinMax = pluginData.AppLovinMax;
                     UpdateCurrentVersions(appLovinMax, PluginParentDirectory);
@@ -382,7 +410,7 @@ namespace AppLovinMax.Scripts.IntegrationManager.Editor
         /// <returns></returns>
         public IEnumerator DownloadPlugin(Network network)
         {
-            var path = Path.Combine(Application.temporaryCachePath, network.PluginFileName); // TODO: Maybe delete plugin file after finishing import.
+            var path = Path.Combine(Application.temporaryCachePath, GetPluginFileName(network)); // TODO: Maybe delete plugin file after finishing import.
 #if UNITY_2017_2_OR_NEWER
             var downloadHandler = new DownloadHandlerFile(path);
 #else
@@ -545,7 +573,7 @@ namespace AppLovinMax.Scripts.IntegrationManager.Editor
         private bool IsImportingNetwork(string packageName)
         {
             // Note: The pluginName doesn't have the '.unitypacakge' extension included in its name but the pluginFileName does. So using Contains instead of Equals.
-            return importingNetwork != null && importingNetwork.PluginFileName.Contains(packageName);
+            return importingNetwork != null && GetPluginFileName(importingNetwork).Contains(packageName);
         }
 
         /// <summary>
@@ -757,6 +785,11 @@ namespace AppLovinMax.Scripts.IntegrationManager.Editor
 #else
             return false;
 #endif
+        }
+
+        private static string GetPluginFileName(Network network)
+        {
+            return network.Name.ToLowerInvariant() + "_" + network.LatestVersions.Unity + ".unitypackage";
         }
 
         #endregion

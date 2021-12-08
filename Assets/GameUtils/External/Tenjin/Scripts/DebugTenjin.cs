@@ -98,8 +98,8 @@ public class DebugTenjin : BaseTenjin {
 		Debug.Log("RequestTrackingAuthorizationWithCompletionHandler");
 	}
 
-	public override void GetTrackingAuthorizationStatus(string status)
+	public override void SetAppStoreType(AppStoreType appStoreType)
 	{
-		Debug.Log("GetTrackingAuthorizationStatus");
+		Debug.Log("SetAppStoreType");
 	}
 }

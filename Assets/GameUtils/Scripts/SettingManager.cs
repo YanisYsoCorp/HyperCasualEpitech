@@ -19,6 +19,10 @@ namespace YsoCorp {
             public GameObject panelBts;
             public GameObject content;
             public Button bLang;
+            public Text tVersion;
+            public Button bVersion;
+
+            private float _versionLastClick;
 
             protected override void Awake() {
                 base.Awake();
@@ -30,6 +34,16 @@ namespace YsoCorp {
                 this.bRestorePurchase.gameObject.SetActive(false);
 #endif
                 this.bLang.gameObject.SetActive(false);
+                this.tVersion.text = "v" + Application.version + "  sdk" + YCConfig.VERSION;
+                if (this.ycManager.abTestingManager.GetPlayerSample() != "") {
+                    this.tVersion.text += " (" + this.ycManager.abTestingManager.GetPlayerSample() + ")";
+                }
+                this.bVersion.onClick.AddListener(() => {
+                    if (Time.time - this._versionLastClick < 0.3f) {
+                        MaxSdk.ShowMediationDebugger();
+                    }
+                    this._versionLastClick = Time.time;
+                });
             }
 
             private void Start() {

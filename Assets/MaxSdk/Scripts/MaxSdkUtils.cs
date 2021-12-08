@@ -13,6 +13,7 @@ public class MaxSdkUtils
 {
     private static readonly char _DictKeyValueSeparator = (char) 28;
     private static readonly char _DictKeyValuePairSeparator = (char) 29;
+    private static readonly string _ArrayItemSeparator = ",\n";
 
     /// <summary>
     /// An Enum to be used when comparing two versions.
@@ -64,8 +65,8 @@ public class MaxSdkUtils
     /// The native iOS and Android plugins forward dictionaries as a string such as:
     ///
     /// "key_1=value1
-    ///  key_2=value2,
-    ///  key=3-value3"
+    ///  key_2=value2
+    ///  key_3=value3"
     ///  
     /// </summary>
     public static IDictionary<string, string> PropsStringToDict(string str)
@@ -95,7 +96,7 @@ public class MaxSdkUtils
     /// <summary>
     /// The native iOS and Android plugins forward dictionaries as a string such as:
     ///
-    /// "key_1=value1,key_2=value2,key=3-value3"
+    /// "key_1=value1,key_2=value2,key_3=value3"
     ///  
     /// </summary>
     public static String DictToPropsString(IDictionary<string, string> dict)
@@ -117,6 +118,34 @@ public class MaxSdkUtils
         }
 
         return serialized.ToString();
+    }
+
+    /// <summary>
+    /// The native iOS and Android plugins forward arrays of dictionaries as a string such as:
+    ///
+    /// key_1=value1
+    /// key_2=value2
+    /// ,
+    /// key_1=value1
+    /// key_2=value2
+    ///  
+    /// </summary>
+    public static List<T> PropsStringsToList<T>(string str)
+    {
+        var result = new List<T>();
+
+        if (string.IsNullOrEmpty(str)) return result;
+
+        var infoStrings = str.Split(new[] { _ArrayItemSeparator }, StringSplitOptions.None);
+        foreach (var infoString in infoStrings)
+        {
+            // Dynamically construct generic type with string argument.
+            // The type T must have a constructor that creates a new object from an info string, i.e., new T(infoString)
+            var instance = (T)Activator.CreateInstance(typeof(T), infoString);
+            result.Add(instance);
+        }
+
+        return result;
     }
 
     /// <summary>
@@ -169,9 +198,11 @@ public class MaxSdkUtils
     /// </summary>
     public static float GetScreenDensity()
     {
-#if UNITY_IOS
+#if UNITY_EDITOR
+        return 1;
+#elif UNITY_IOS
         return _MaxScreenDensity();
-#elif UNITY_ANDROID && !UNITY_EDITOR
+#elif UNITY_ANDROID
         return MaxUnityPluginClass.CallStatic<float>("getScreenDensity");
 #else
         return -1;

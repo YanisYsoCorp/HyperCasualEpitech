@@ -10,6 +10,9 @@ namespace YsoCorp {
 
             private static string PLAYER_SAMPLE = "YC_PLAYER_SAMPLE";
 
+            Dictionary<string, bool> _results = new Dictionary<string, bool>();
+            string _sample = null;
+
             protected override void Awake() {
                 base.Awake();
             }
@@ -53,16 +56,13 @@ namespace YsoCorp {
             }
 
             private float GetABPercent() {
-                if (this.ycManager.ycConfig.ABPercentMax) {
-                    return 1f / this.GetABSamples().Length;
-                }
-                return this.ycManager.ycConfig.ABPercent;
+                return 1f / this.GetABSamples().Length;
             }
 
             private string[] GetABSamples() {
                 List<string> abs = new List<string>();
                 if (this.ycManager.ycConfig.ABSamples.Length > 0) {
-                    abs.Add(this.ConvertSample("other"));
+                    abs.Add(this.ConvertSample("control"));
                     foreach (string ab in this.ycManager.ycConfig.ABSamples) {
                         abs.Add(this.ConvertSample(ab));
                     }
@@ -86,20 +86,22 @@ namespace YsoCorp {
             }
 
             // PUBLIC
-            public string GetPlayerSample(bool allVersion = false) {
-                this.GenerateSample();
-                string sample = this.GetSample();
-                if ((Debug.isDebugBuild || Application.isEditor) && this.ycManager.ycConfig.ABForcedSample != "") {
-                    sample = this.ConvertSample(this.ycManager.ycConfig.ABForcedSample);
+            public string GetPlayerSample() {
+                if (this._sample == null) {
+                    this.GenerateSample();
+                    this._sample = this.GetSample();
+                    if ((Debug.isDebugBuild || Application.isEditor) && this.ycManager.ycConfig.ABForcedSample != "") {
+                        this._sample = this.ConvertSample(this.ycManager.ycConfig.ABForcedSample);
+                    }
                 }
-                if (allVersion) {
-                    sample = sample.Substring(sample.IndexOf('-') + 1);
-                }
-                return sample;
+                return this._sample;
             }
 
-            public bool IsPlayerSample(string a, bool allVersion = false) {
-                return this.GetPlayerSample(allVersion) == this.ConvertSample(a, allVersion);
+            public bool IsPlayerSample(string a) {
+                if (this._results.ContainsKey(a) == false) {
+                    this._results[a] = this.GetPlayerSample() == this.ConvertSample(a);
+                }
+                return this._results[a];
             }
 
             public bool IsPlayerSampleContaine(string a) {

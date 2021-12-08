@@ -11,7 +11,7 @@ public abstract class BaseTenjin : MonoBehaviour {
 	protected bool optOut;
 	protected int appSubversion;
 
-    public string SdkVersion { get; } = "1.12.4";
+    public string SdkVersion { get; } = "1.12.7";
 
 	public string ApiKey{
 		get{
@@ -58,10 +58,7 @@ public abstract class BaseTenjin : MonoBehaviour {
 	public abstract void RegisterAppForAdNetworkAttribution();
 	public abstract void UpdateConversionValue(int conversionValue);
 	public abstract void RequestTrackingAuthorizationWithCompletionHandler(Action<int> trackingAuthorizationCallback);
-	public abstract void GetTrackingAuthorizationStatus(string status);
-
 	public abstract void DebugLogs();
-
-    public abstract void SubscribeMoPubImpressions();
-
+	public abstract void SetAppStoreType(AppStoreType appStoreType);
+	public abstract void SubscribeMoPubImpressions();
 }

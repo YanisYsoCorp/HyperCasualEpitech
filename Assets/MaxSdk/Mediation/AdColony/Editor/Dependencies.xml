@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<dependencies>
+    <androidPackages>
+        <androidPackage spec="com.applovin.mediation:adcolony-adapter:4.6.5.0"/>
+    </androidPackages>
+    <iosPods>
+        <iosPod name="AppLovinMediationAdColonyAdapter" version="4.7.2.0.0"/>
+    </iosPods>
+</dependencies>

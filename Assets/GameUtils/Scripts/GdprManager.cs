@@ -1,12 +1,26 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System;
+using System.IO;
 
 namespace YsoCorp {
     namespace GameUtils {
 
         [DefaultExecutionOrder(-10)]
         public class GdprManager : BaseManager {
+
+            [Serializable]
+            public class Privacy {
+                [YcReadOnly] public string label;
+                [YcReadOnly] public string link;
+                public bool display = false;
+
+                public Privacy(string lab, string lin, bool display) {
+                    this.label = lab;
+                    this.link = lin;
+                    this.display = display;
+                }
+            }
 
             public Canvas canvas;
             public Button pfBPrivacy;
@@ -29,6 +43,27 @@ namespace YsoCorp {
 
             private Action _action;
 
+            private Privacy[] privacies = {
+                new Privacy("AdColony", "https://www.adcolony.com/privacy-policy", true),
+                new Privacy("Amazon", "https://advertising.amazon.com/resources/ad-policy/en/gdpr", false),
+                new Privacy("AppLovin", "https://www.applovin.com/privacy/", true),
+                new Privacy("Facebook", "https://m.facebook.com/about/privacy", true),
+                new Privacy("Fyber", "https://www.fyber.com/Privacy-policy/", true),
+                new Privacy("Google", "https://policies.google.com/privacy", true),
+                new Privacy("InMobi", "https://www.inmobi.com/privacy-policy/", true),
+                new Privacy("IronSource", "http://www.ironsrc.com/wp-content/uploads/2019/03/ironSource-Privacy-Policy.pdf", true),
+                new Privacy("Line", "https://line.me/en/terms/policy/", true),
+                new Privacy("Mintegral", "https://www.mintegral.com/en/privacy", true),
+                new Privacy("MyTarget", "https://legal.my.com/us/mytarget/privacy/", true),
+                new Privacy("ByteDance", "https://www.pangleglobal.com/privacy", true),
+                new Privacy("Smaato", "https://www.smaato.com/privacy/", false),
+                new Privacy("TapJoy", "https://www.tapjoy.com/legal/#privacy-policy", false),
+                new Privacy("Tenjin", "https://www.tenjin.io/privacy/", true),
+                new Privacy("TikTok", "https://www.tiktok.com/legal/privacy-policy", true),
+                new Privacy("UnityAds", "https://unity3d.com/fr/legal/privacy-policy", true),
+                new Privacy("Vungle", "https://vungle.com/privacy", true)
+            };
+
             protected override void Awake() {
                 base.Awake();
                 this.InitPrivacies();
@@ -47,7 +82,6 @@ namespace YsoCorp {
                 });
 
                 this.bS3Accept.onClick.AddListener(() => {
-                    this.ycManager.dataManager.SetGdprValidate();
                     this.ycManager.dataManager.SetGdprAnalytics(this.togAnalytics.isOn);
                     this.ycManager.dataManager.SetGdprAds(this.togAds.isOn);
                     this.HideAllSteps();
@@ -59,7 +93,6 @@ namespace YsoCorp {
             }
 
             void Accept() {
-                this.ycManager.dataManager.SetGdprValidate();
                 this.ycManager.dataManager.SetGdprAnalytics(true);
                 this.ycManager.dataManager.SetGdprAds(true);
                 this.HideAllSteps();
@@ -67,17 +100,16 @@ namespace YsoCorp {
             }
 
             void InitPrivacies() {
-                this.pfBPrivacy.gameObject.SetActive(true);
-                foreach (YCConfig.Privacy p in this.ycManager.ycConfig.GetGdprPrivacies()) {
+                foreach (Privacy p in this.privacies) {
                     if (p.display == true) {
-                        Button b = Instantiate<Button>(this.pfBPrivacy, this.gridPrivacies.transform);
+                        Button b = Instantiate(this.pfBPrivacy, this.gridPrivacies.transform);
+                        b.gameObject.SetActive(true);
                         b.GetComponentInChildren<Text>().text = p.label;
                         b.onClick.AddListener(() => {
                             Application.OpenURL(p.link);
                         });
                     }
                 }
-                this.pfBPrivacy.gameObject.SetActive(false);
             }
 
             void ShowStep(GameObject step) {

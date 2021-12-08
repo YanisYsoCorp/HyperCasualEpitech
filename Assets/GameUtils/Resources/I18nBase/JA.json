@@ -1,7 +1,14 @@
 ﻿{
-    "Setting": "設定",
+    "Settings": "設定",
     "Close": "閉じる",
     "Data privacy": "データのプライバシー",
     "Restore purchase": "レストランチャット",
-    "Play": "演奏する"
+    "Play": "演奏する",
+    "Retry": "リトライ",
+    "Next": "次",
+    "Win": "勝った",
+    "Lose": "失われた",
+    "Yes": "はい",
+    "No": "いいえ",
+    "No Internet Connection": "インターネット接続なし"
 }

@@ -1,0 +1,12 @@
+fileFormatVersion: 2
+guid: f06c13727687d4f2a9873c23aed3502f
+labels:
+- al_max
+- al_max_export_path-MaxSdk/Mediation/MyTarget
+- al_max_export_path-MaxSdk\Mediation\MyTarget
+folderAsset: yes
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

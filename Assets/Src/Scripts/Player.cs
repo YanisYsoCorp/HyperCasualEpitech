@@ -7,19 +7,17 @@ namespace YsoCorp {
 
     public class Player : Movable {
 
-        private static float LEFT_LIMIT = -1.5f;
-        private static float RIGHT_LIMIT = 1.5f;
+        private static float LEFT_LIMIT = -2f;
+        private static float RIGHT_LIMIT = 2f;
         private static float SPEED_ROTATION = 25f;
         private static float SPEED_ACCELERATION = 0.5f;
         private static float SPEED = 4f;
         private static float ROTATION_SENSITIVITY = 0.2f;
         private static float MOVE_SENSITIVITY = 0.01f; 
-        private static float TELEPORTATION_SENSITIVITY = 80f; 
-        private static float TELEPORTATION_OFFSET = 1.5f;
-        private static float MAX_ANGLE = 25f;
+        private static float MAX_ANGLE = 35f;
 
-        public bool clampRotation;
-        public bool slide;
+        public bool movementsWithRotation;
+        public bool preventFall;
 
         private bool _isMoving;
         private Vector3 _slideMove;
@@ -74,6 +72,7 @@ namespace YsoCorp {
 
         public void Die(Transform killer) {
             this.isAlive = false;
+
             if (this._ragdollBehviour != null) {
                 this._ragdollBehviour.EnableRagdoll(killer);
                 this.cam.Follow(this._ragdollBehviour.hips);
@@ -96,7 +95,15 @@ namespace YsoCorp {
                 this._rigidbody.MovePosition(this._rigidbody.position + this.transform.forward * this.speed * Time.fixedDeltaTime + this._slideMove);
                 this._rigidbody.MoveRotation(Quaternion.RotateTowards(this._rigidbody.rotation, this._rotation, SPEED_ROTATION));
                 this._slideMove = Vector3.zero;
+
+                if (this.preventFall == true) {
+                    this.BlockPlayerFromFalling();
+                }
             }
+        }
+
+        private void BlockPlayerFromFalling() {
+            this._rigidbody.position = new Vector3(Mathf.Clamp(this._rigidbody.position.x, LEFT_LIMIT, RIGHT_LIMIT), this._rigidbody.position.y, this._rigidbody.position.z);
         }
 
         public override void GesturePanDown() {
@@ -114,30 +121,15 @@ namespace YsoCorp {
                 return;
             }
 
-            if (this.clampRotation == true) {
+            if (this.movementsWithRotation == true) {
                 this.RotateClamped(deltaX);
-            } else if (this.slide == true) {
-                this.Slide(deltaX);
             } else {
-                this.Teleport(deltaX);
+                this.Slide(deltaX);
             }
         }
 
         private void Slide(float deltaX) {
             this._slideMove = new Vector3(deltaX * MOVE_SENSITIVITY, 0 , 0);
-        }
-
-        private bool CheckFall(Vector3 movement) {
-            Vector3 nextPos = this._rigidbody.position + movement;
-            return nextPos.x < LEFT_LIMIT || nextPos.x > RIGHT_LIMIT;
-        }
-
-        private void Teleport(float deltaX) {
-            Vector3 movement = this.transform.right * TELEPORTATION_OFFSET * Mathf.Sign(deltaX);
-
-            if (Mathf.Abs(deltaX) > TELEPORTATION_SENSITIVITY && this.CheckFall(movement) == false) {
-                this._rigidbody.MovePosition(this._rigidbody.position + movement);
-            }
         }
 
         public override void GesturePanUp() {

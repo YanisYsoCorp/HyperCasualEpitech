@@ -14,13 +14,30 @@ namespace YsoCorp {
             private static string ADSSHOW = "ADSSHOW";
             private static string LANGUAGE = "LANGUAGE";
 
-            private static string GDPR_VALIDATE = "GDPR_VALIDATE";
             private static string GDPR_ADS = "GDPR_ADS";
             private static string GDPR_ANALYTICS = "GDPR_ANALYTICS";
+            private static string INTERSTITIALS_NB = "INTERSTITIALS_NB";
+            private static string REWARDEDS_NB = "REWARDEDS_NB";
+            private static string TIMESTAMP = "TIMESTAMP";
 
             private static int DEFAULT_VIBRATION = 1;
             private static int DEFAULT_SOUNDEFFECT = 1;
             private static int DEFAULT_SOUNDMUSIC = 1;
+
+            protected override void Awake() {
+                base.Awake();
+                if (this.HasKey(TIMESTAMP) == false) {
+                    this.SetInt(TIMESTAMP, this.GetTimestamp());
+                }
+            }
+
+            public int GetTimestamp() {
+                return (int)(DateTimeOffset.Now.ToUnixTimeMilliseconds() / 1000);
+            }
+
+            public int GetDiffTimestamp() {
+                return this.GetTimestamp() - this.GetInt(TIMESTAMP);
+            }
 
 
             //ADVERTISING ID
@@ -89,24 +106,33 @@ namespace YsoCorp {
 
             // GDPR
             public void SetGdprAds(bool consent) {
-                this.SetInt(GDPR_ADS, (consent == true) ? 1 : 0);
+                this.SetBool(GDPR_ADS, consent);
             }
             public bool GetGdprAds() {
-                return this.GetInt(GDPR_ADS, 1) == 1;
+                return this.GetBool(GDPR_ADS, true);
             }
 
-            public void SetGdprAnalytics(bool under16) {
-                this.SetInt(GDPR_ANALYTICS, (under16 == true) ? 1 : 0);
+            public void SetGdprAnalytics(bool analytics) {
+                this.SetBool(GDPR_ANALYTICS, analytics);
             }
             public bool GetGdprAnalytics() {
-                return this.GetInt(GDPR_ANALYTICS, 1) == 1;
+                return this.GetBool(GDPR_ANALYTICS, true);
             }
 
-            public void SetGdprValidate() {
-                this.SetInt(GDPR_VALIDATE, 1);
+            // NB INTERSTITIALS
+            public int GetInterstitialsNb() {
+                return this.GetInt(INTERSTITIALS_NB, 0);
             }
-            public bool GetGdprValidate() {
-                return this.GetInt(GDPR_VALIDATE, 0) == 1;
+            public void IncrementInterstitialsNb() {
+                this.SetInt(INTERSTITIALS_NB, this.GetInterstitialsNb() + 1);
+            }
+
+            // NB INTERSTITIALS
+            public int GetRewardedsNb() {
+                return this.GetInt(REWARDEDS_NB, 0);
+            }
+            public void IncrementRewardedsNb() {
+                this.SetInt(REWARDEDS_NB, this.GetRewardedsNb() + 1);
             }
 
         }

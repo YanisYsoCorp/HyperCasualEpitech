@@ -6,6 +6,7 @@ using System.Collections.Generic;
 public class AndroidTenjin : BaseTenjin {
 
 	private const string AndroidJavaTenjinClass = "com.tenjin.android.TenjinSDK";
+	private const string AndroidJavaTenjinAppStoreType = "com.tenjin.android.TenjinSDK$AppStoreType";
 
 #if UNITY_ANDROID && !UNITY_EDITOR
 	private AndroidJavaObject tenjinJava = null;
@@ -76,7 +77,7 @@ public class AndroidTenjin : BaseTenjin {
 		SharedSecret = sharedSecret;
 		AppSubversion = appSubversion;
 
-        SetUnityVersionInNativeSDK();
+		SetUnityVersionInNativeSDK();
 
 		initActivity();
 		AndroidJavaClass sdk = new AndroidJavaClass (AndroidJavaTenjinClass);
@@ -246,9 +247,6 @@ public class AndroidTenjin : BaseTenjin {
 	public override void RequestTrackingAuthorizationWithCompletionHandler(Action<int> trackingAuthorizationCallback) {
 	}
 
-	public override void GetTrackingAuthorizationStatus(string status) {
-	}
-
 	public override void AppendAppSubversion (int appSubversion){
 		object[] args = new object[]{appSubversion};
 		tenjinJava.Call ("appendAppSubversion", args);
@@ -289,6 +287,17 @@ public class AndroidTenjin : BaseTenjin {
         var args = new object[] {json};
         tenjinJava.Call ("eventAdImpressionMoPub", args);
     }
+
+	public override void SetAppStoreType (AppStoreType appStoreType){
+		object[] args = new object[]{appStoreType};
+		AndroidJavaClass appStoreTypeClass = new AndroidJavaClass(AndroidJavaTenjinAppStoreType); 
+		if (appStoreTypeClass != null){
+			AndroidJavaObject tenjinAppStoreType = appStoreTypeClass.GetStatic<AndroidJavaObject>(appStoreType.ToString());
+			if (tenjinAppStoreType != null) {
+				tenjinJava.Call ("setAppStore", tenjinAppStoreType);
+			}
+		}
+	}
 #else
 	public override void Init(string apiKey){
 		Debug.Log ("Android Initializing - v"+this.SdkVersion);
@@ -380,13 +389,12 @@ public class AndroidTenjin : BaseTenjin {
 	}
 
 	public override void RequestTrackingAuthorizationWithCompletionHandler(Action<int> trackingAuthorizationCallback)
-    {
+	{
 		throw new NotImplementedException();
 	}
 
-	public override void GetTrackingAuthorizationStatus(string status)
-	{
-		throw new NotImplementedException();
+	public override void SetAppStoreType(AppStoreType appStoreType) {
+		Debug.Log("Setting AndroidTenjin::SetAppStoreType: " + appStoreType);
 	}
 #endif
 }

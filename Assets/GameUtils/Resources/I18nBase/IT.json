@@ -1,7 +1,14 @@
 ﻿{
-    "Setting": "Parametre",
+    "Settings": "Parametre",
     "Close": "Chiudere",
     "Data privacy": "Privacy dei dati",
     "Restore purchase": "Ripristinare acquisto",
-    "Play": "Giocare"
+    "Play": "Giocare",
+    "Retry": "Riprova",
+    "Next": "prossimo",
+    "Win": "Vinto",
+    "Lose": "Perduto",
+    "Yes": "Sì",
+    "No": "No",
+    "No Internet Connection": "Nessuna connessione internet"
 }

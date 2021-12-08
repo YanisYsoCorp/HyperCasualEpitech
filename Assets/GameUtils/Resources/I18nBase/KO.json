@@ -1,7 +1,14 @@
 ﻿{
-    "Setting": "환경",
+    "Settings": "환경",
     "Close": "닫기",
     "Data privacy": "데이터 프라이버시",
     "Restore purchase": "구매 복구",
-    "Play": "플레이"
+    "Play": "플레이",
+    "Retry": "다시 해 보다",
+    "Next": "다음",
+    "Win": "승리",
+    "Lose": "잃다",
+    "Yes": "네",
+    "No": "아니오",
+    "No Internet Connection": "인터넷에 연결되지 않음"
 }

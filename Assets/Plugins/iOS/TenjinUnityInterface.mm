@@ -147,7 +147,7 @@ void iosTenjinRequestTrackingAuthorizationWithCompletionHandler(){
         NSString *statusString = [NSString stringWithFormat:@"%tu", status];
         NSLog(@"ATTracking status: %@", statusString);
         const char* charStatus = [statusString UTF8String];
-        UnitySendMessage([@"Tenjin" UTF8String], "GetTrackingAuthorizationStatus", charStatus);
+        UnitySendMessage([@"Tenjin" UTF8String], "SetTrackingAuthorizationStatus", charStatus);
     }];
 }
 

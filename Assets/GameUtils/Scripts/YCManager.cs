@@ -26,6 +26,8 @@ namespace YsoCorp {
             public I18nManager i18nManager { get; set; }
             public InAppManager inAppManager { get; set; }
             public MmpManager mmpManager { get; set; }
+            public NoInternetManager noInternetManager { get; set; }
+            public PushNotificationManager pushNotificationManager { get; set; }
             public RateManager rateManager { get; set; }
             public RequestManager requestManager { get; set; }
             public SettingManager settingManager { get; set; }
@@ -35,7 +37,7 @@ namespace YsoCorp {
 
             protected override void Awake() {
                 if (instance != null) {
-                    Destroy(this.gameObject);
+                    DestroyImmediate(this.gameObject);
                 } else {
                     instance = this;
                     base.Awake();
@@ -49,6 +51,8 @@ namespace YsoCorp {
                     this.i18nManager = this.GetComponentInChildren<I18nManager>();
                     this.inAppManager = this.GetComponentInChildren<InAppManager>();
                     this.mmpManager = this.GetComponentInChildren<MmpManager>();
+                    this.noInternetManager = this.GetComponentInChildren<NoInternetManager>();
+                    this.pushNotificationManager = this.GetComponentInChildren<PushNotificationManager>();
                     this.rateManager = this.GetComponentInChildren<RateManager>();
                     this.requestManager = this.GetComponentInChildren<RequestManager>();
                     this.settingManager = this.GetComponentInChildren<SettingManager>(true);

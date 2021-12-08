@@ -67,7 +67,8 @@ namespace AppLovinMax.Scripts.IntegrationManager.Editor
                 if (data == null) return;
 
                 ShowPluginUpdateDialogIfNeeded(data);
-                ShowNetworkAdaptersUpdateDialogIfNeeded(data);
+                ShowNetworkAdaptersUpdateDialogIfNeeded(data.MediatedNetworks);
+                ShowGoogleNetworkAdaptersUpdateDialogIfNeeded(data.MediatedNetworks);
             }));
         }
 
@@ -106,9 +107,8 @@ namespace AppLovinMax.Scripts.IntegrationManager.Editor
             }
         }
 
-        private static void ShowNetworkAdaptersUpdateDialogIfNeeded(PluginData data)
+        private static void ShowNetworkAdaptersUpdateDialogIfNeeded(Network[] networks)
         {
-            var networks = data.MediatedNetworks;
             var networksToUpdate = networks.Where(network => network.RequiresUpdate).ToList();
 
             // If all networks are above the required version, do nothing.
@@ -125,6 +125,43 @@ namespace AppLovinMax.Scripts.IntegrationManager.Editor
             message += "\n\nPlease update them to the latest versions to avoid any issues.";
 
             AppLovinIntegrationManager.ShowBuildFailureDialog(message);
+        }
+
+        private static void ShowGoogleNetworkAdaptersUpdateDialogIfNeeded(Network[] networks)
+        {
+            // AdMob and GAM use the same SDKs so their adapters should use the same underlying SDK version.
+            var googleNetwork = networks.FirstOrDefault(network => network.Name.Equals("ADMOB_NETWORK"));
+            var googleAdManagerNetwork = networks.FirstOrDefault(network => network.Name.Equals("GOOGLE_AD_MANAGER_NETWORK"));
+
+            // If both AdMob and GAM are not integrated, do nothing.
+            if (googleNetwork == null || string.IsNullOrEmpty(googleNetwork.CurrentVersions.Unity) ||
+                googleAdManagerNetwork == null || string.IsNullOrEmpty(googleAdManagerNetwork.CurrentVersions.Unity)) return;
+
+            var isAndroidVersionCompatible = GoogleNetworkAdaptersCompatible(googleNetwork.CurrentVersions.Android, googleAdManagerNetwork.CurrentVersions.Android, "19.8.0.0");
+            var isIosVersionCompatible = GoogleNetworkAdaptersCompatible(googleNetwork.CurrentVersions.Ios, googleAdManagerNetwork.CurrentVersions.Ios, "8.0.0.0");
+
+            if (isAndroidVersionCompatible && isIosVersionCompatible) return;
+
+            var message = "You may see unexpected errors if you use different versions of the AdMob and Google Ad Manager adapter SDKs. " +
+                          "AdMob and Google Ad Manager share the same SDKs.\n\n" +
+                          "You can be sure that you are using the same SDK for both if the first three numbers in each adapter version match.";
+
+            AppLovinIntegrationManager.ShowBuildFailureDialog(message);
+        }
+
+        private static bool GoogleNetworkAdaptersCompatible(string googleVersion, string googleAdManagerVersion, string breakingVersion)
+        {
+            var googleResult = MaxSdkUtils.CompareVersions(googleVersion, breakingVersion);
+            var googleAdManagerResult = MaxSdkUtils.CompareVersions(googleAdManagerVersion, breakingVersion);
+
+            // If one is less than the breaking version and the other is not, they are not compatible.
+            if (googleResult == MaxSdkUtils.VersionComparisonResult.Lesser &&
+                googleAdManagerResult != MaxSdkUtils.VersionComparisonResult.Lesser) return false;
+
+            if (googleAdManagerResult == MaxSdkUtils.VersionComparisonResult.Lesser &&
+                googleResult != MaxSdkUtils.VersionComparisonResult.Lesser) return false;
+
+            return true;
         }
     }
 }

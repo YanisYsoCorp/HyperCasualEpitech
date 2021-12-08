@@ -1,7 +1,11 @@
 using UnityEngine;
 using UnityEditor;
 using System;
+using System.IO;
 using System.Net;
+using Facebook.Unity.Settings;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 namespace YsoCorp {
     namespace GameUtils {
@@ -10,17 +14,69 @@ namespace YsoCorp {
         public class YCConfigEditor : Editor {
             public override void OnInspectorGUI() {
                 this.DrawDefaultInspector();
+                GUILayout.Space(10);
                 YCConfig myTarget = (YCConfig)this.target;
                 if (GUILayout.Button("Import Config")) {
                     myTarget.EditorImportConfig();
                     EditorUtility.SetDirty(myTarget);
                 }
+                GUILayout.Space(10);
+#if PUSH_NOTIFICATION
+                if (GUILayout.Button("Disactivate Notification")) {
+                    myTarget.RemoveDefineSymbolsForGroup("PUSH_NOTIFICATION");
+                }
+#else
+                if (GUILayout.Button("Activate Notification")) {
+                    myTarget.AddDefineSymbolsForGroup("PUSH_NOTIFICATION");
+                }
+#endif
+
+#if IN_APP_PURCHASING
+                if (GUILayout.Button("Disactivate In App Purchases")) {
+                    myTarget.RemoveDefineSymbolsForGroup("IN_APP_PURCHASING");
+                }
+#else
+                if (GUILayout.Button("Activate In App Purchases")) {
+                    myTarget.AddDefineSymbolsForGroup("IN_APP_PURCHASING");
+                }
+#endif
+
+#if FIREBASE
+                if (GUILayout.Button("Disactivate Firebase")) {
+                    myTarget.RemoveDefineSymbolsForGroup("FIREBASE");
+                }
+#else
+                if (GUILayout.Button("Activate Firebase")) {
+                    if (Directory.Exists("Assets/Firebase")) {
+                        myTarget.AddDefineSymbolsForGroup("FIREBASE");
+                    } else {
+                        myTarget.DisplayDialog("Error", "This only for validate game.\nPlease import Firebase Analytics before.", "Ok");
+                    }
+                }
+#endif
+
             }
         }
 #endif
 
         [CreateAssetMenu(fileName = "YCConfigData", menuName = "YsoCorp/Configuration", order = 1)]
         public class YCConfig : ScriptableObject {
+
+            public static string VERSION = "1.19.0";
+
+            [Serializable]
+            public class Notification {
+                public string key;
+                public string title;
+                public string message;
+                public int minutes;
+                public bool repeats;
+                public bool optionAlert = true;
+                public bool optionSound = true;
+                public bool optionBadge = true;
+                [YcBoolHide("optionBadge", true)]
+                public int numberBadge = 0;
+            }
 
             [Serializable]
             public struct DataData {
@@ -36,6 +92,8 @@ namespace YsoCorp {
                 public string facebook_app_id;
                 public string admob_android_app_id;
                 public string admob_ios_app_id;
+                public string google_services_ios;
+                public string google_services_android;
                 public ApplovinData applovin;
                 public MmpsData mmps;
             }
@@ -43,7 +101,6 @@ namespace YsoCorp {
             // APPLOVIN
             [Serializable]
             public struct ApplovinData {
-                public bool force_init;
                 public ApplovinAdUnitsData adunits;
             }
             [Serializable]
@@ -74,39 +131,6 @@ namespace YsoCorp {
                 public MmpData tenjin;
             }
 
-            static private Privacy[] GDPRPRIVACIES = {
-                new Privacy("AdColony", "https://www.adcolony.com/privacy-policy"),
-                new Privacy("Amazon", "https://advertising.amazon.com/resources/ad-policy/en/gdpr"),
-                new Privacy("AppLovin", "https://www.applovin.com/privacy/", true),
-                new Privacy("Facebook", "https://m.facebook.com/about/privacy", true),
-                new Privacy("Fyber", "https://www.fyber.com/Privacy-policy/"),
-                new Privacy("GameAnalytics", "https://gameanalytics.com/privacy", true),
-                new Privacy("Google", "https://policies.google.com/privacy"),
-                new Privacy("InMobi", "https://www.inmobi.com/privacy-policy/"),
-                new Privacy("IronSource", "http://www.ironsrc.com/wp-content/uploads/2019/03/ironSource-Privacy-Policy.pdf"),
-                new Privacy("Mintegral", "https://www.mintegral.com/en/privacy"),
-                new Privacy("ByteDance", "https://www.pangleglobal.com/privacy"),
-                new Privacy("Smaato", "https://www.smaato.com/privacy/"),
-                new Privacy("TapJoy", "https://www.tapjoy.com/legal/#privacy-policy"),
-                new Privacy("Tenjin", "https://www.tenjin.io/privacy/", true),
-                new Privacy("TikTok", "https://www.tiktok.com/legal/privacy-policy"),
-                new Privacy("UnityAds", "https://unity3d.com/fr/legal/privacy-policy"),
-                new Privacy("Vungle", "https://vungle.com/privacy")
-            };
-
-            [Serializable]
-            public class Privacy {
-                public string label;
-                public string link;
-                public bool display = true;
-
-                public Privacy(string lab, string lin, bool dis = false) {
-                    this.label = lab;
-                    this.link = lin;
-                    this.display = dis;
-                }
-            }
-
             [Header("------------------------------- CONFIG")]
             public string gameYcId;
 
@@ -119,24 +143,45 @@ namespace YsoCorp {
             public bool SoundEffect = false;
             public bool SoundMusic = false;
 
+
+#if IN_APP_PURCHASING
             [Header("InApp")]
             public string InAppRemoveAds;
             public bool InAppRemoveAdsCanRemoveInBanner = true;
             public string[] InAppConsumables;
+#else
+            [Header("InApp (Enable & Import InApp in Service)")]
+            [YcReadOnly] public string InAppRemoveAds;
+            [YcReadOnly] public bool InAppRemoveAdsCanRemoveInBanner;
+            public string[] InAppConsumables { get; set; } = { };
+#endif
+
+#if PUSH_NOTIFICATION
+            [Header("Notifications")]
+            public bool NotifAuthorizationAlert = true;
+            public bool NotifAuthorizationBadge = true;
+            public bool NotifAuthorizationSound = true;
+            public Notification[] NotificationsAuto;
+#else
+            [Header("Notifications (Import in package manage & activate)")]
+            [YcReadOnly] public bool NotifAuthorizationAlert = true;
+            [YcReadOnly] public bool NotifAuthorizationBadge = true;
+            [YcReadOnly] public bool NotifAuthorizationSound = true;
+            public Notification[] NotificationsAuto { get; set; }
+#endif
 
             [Header("A/B Tests")]
             public int ABVersion = 1;
-            public bool ABPercentMax = true;
-            [YcBoolHide("ABPercentMax", false)]
-            public float ABPercent = 0.05f;
             public string ABForcedSample = "";
             public string[] ABSamples = { };
+
 
             [Header("Rate Box")]
             public bool RateBoxShow;
 
             [Header("Ads")]
-            public float InterstitialInterval = 30;
+            public bool BannerDisplayOnInit = true;
+            public float InterstitialInterval = 20;
 
             [Header("------------------------------- AUTO IMPORT")]
 
@@ -162,27 +207,10 @@ namespace YsoCorp {
             [YcReadOnly] public string AndroidInterstitial;
             [YcReadOnly] public string AndroidRewarded;
             [YcReadOnly] public string AndroidBanner;
-            [Space(5)]
-            [YcReadOnly] public bool MaxForceInit;
 
             public string deviceKey {
                 get { return SystemInfo.deviceUniqueIdentifier; }
                 set { }
-            }
-
-            public Privacy[] GetGdprPrivacies() {
-                foreach (Privacy p in GDPRPRIVACIES) {
-                    if (p.display == false) {
-                        p.display = System.IO.Directory.Exists("Assets/MaxSdk/Mediation/" + p.label);
-                    }
-                }
-                return GDPRPRIVACIES;
-            }
-
-            void CheckValues() {
-                if (this.gameYcId == "" || this.gameYcId == "8f3f33") {
-                    Debug.LogError("[GAMEUTILS] key not set");
-                }
             }
 
             public static YCConfig Create() {
@@ -221,7 +249,7 @@ namespace YsoCorp {
                     request.ContentType = "application/json";
                     try {
                         using (HttpWebResponse response = (HttpWebResponse)request.GetResponse()) {
-                            using (var reader = new System.IO.StreamReader(response.GetResponseStream())) {
+                            using (var reader = new StreamReader(response.GetResponseStream())) {
                                 InfosData infos = Newtonsoft.Json.JsonConvert.DeserializeObject<DataData>(reader.ReadToEnd()).data;
                                 if (infos.name != "") {
                                     this.Name = infos.name;
@@ -238,10 +266,12 @@ namespace YsoCorp {
                                     this.AndroidRewarded = infos.applovin.adunits.android.rewarded;
                                     this.AndroidBanner = infos.applovin.adunits.android.banner;
                                     // MMPs
-                                    this.MaxForceInit = infos.applovin.force_init;
                                     this.MmpAdjust = infos.mmps.adjust.active;
                                     this.MmpAdjustAppToken = infos.mmps.adjust.active ? infos.mmps.adjust.app_token : "";
                                     this.MmpTenjin = infos.mmps.tenjin.active;
+                                    this.InitFacebook();
+                                    this.InitMax();
+                                    this.InitFirebase(infos);
                                 } else {
                                     this.DisplayDialog("Error", "Impossible to import config. Check your Game Yc Id or your connection.", "Ok");
                                 }
@@ -253,6 +283,70 @@ namespace YsoCorp {
                 } else {
                     this.DisplayDialog("Error", "Please enter Game Yc Id", "Ok");
                 }
+            }
+
+            public void AddDefineSymbolsForGroup(string def) {
+#if UNITY_EDITOR
+                PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.Standalone, PlayerSettings.GetScriptingDefineSymbolsForGroup(BuildTargetGroup.Standalone) + ";" + def);
+                PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.iOS, PlayerSettings.GetScriptingDefineSymbolsForGroup(BuildTargetGroup.iOS) + ";" + def);
+                PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.Android, PlayerSettings.GetScriptingDefineSymbolsForGroup(BuildTargetGroup.Android) + ";" + def);
+                AssetDatabase.SaveAssets();
+#endif
+            }
+
+            public void RemoveDefineSymbolsForGroup(string def) {
+#if UNITY_EDITOR
+                PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.Standalone, PlayerSettings.GetScriptingDefineSymbolsForGroup(BuildTargetGroup.Standalone).Replace(";" + def, ""));
+                PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.iOS, PlayerSettings.GetScriptingDefineSymbolsForGroup(BuildTargetGroup.iOS).Replace(";" + def, ""));
+                PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.Android, PlayerSettings.GetScriptingDefineSymbolsForGroup(BuildTargetGroup.Android).Replace(";" + def, ""));
+                AssetDatabase.SaveAssets();
+#endif
+            }
+
+            public void InitFacebook() {
+#if UNITY_EDITOR
+                FacebookSettings.AppIds = new List<string> { this.FbAppId };
+                FacebookSettings.AppLabels = new List<string> { Application.productName };
+                EditorUtility.SetDirty(FacebookSettings.Instance);
+                AssetDatabase.SaveAssets();
+
+                string destManifestPath = Path.Combine(Application.dataPath, "Plugins/Android/AndroidManifest.xml");
+                string content = File.ReadAllText(destManifestPath);
+                content = new Regex("fb[0-9]+").Replace(content, "fb" + this.FbAppId);
+                content = new Regex("FacebookContentProvider[0-9]+").Replace(content, "FacebookContentProvider" + this.FbAppId);
+                File.WriteAllText(destManifestPath, content);
+#endif
+            }
+
+            public void InitMax() {
+#if UNITY_EDITOR
+                AppLovinSettings.Instance.AdMobIosAppId = this.AdMobIosAppId;
+                AppLovinSettings.Instance.AdMobAndroidAppId = this.AdMobAndroidAppId;
+                EditorUtility.SetDirty(AppLovinSettings.Instance);
+                AssetDatabase.SaveAssets();
+#endif
+            }
+
+            public void InitFirebase(InfosData infos) {
+#if FIREBASE
+                if (infos.google_services_android != "") {
+                    this.CreateOrUpdateFileInAssets("GameUtils/google-services.json", infos.google_services_android);
+                }
+                if (infos.google_services_ios != "") {
+                    this.CreateOrUpdateFileInAssets("GameUtils/GoogleService-Info.plist", infos.google_services_ios);
+                }
+#if UNITY_EDITOR
+                AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
+#endif
+#endif
+            }
+
+            public void CreateOrUpdateFileInAssets(string path, string content) {
+                path = Application.dataPath + "/" + path;
+                File.Delete(path);
+                StreamWriter sw = File.CreateText(path);
+                sw.Write(content + "\n");
+                sw.Close();
             }
 
         }

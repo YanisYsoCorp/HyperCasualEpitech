@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.Events;
-#if UNITY_PURCHASING
+
+#if IN_APP_PURCHASING
 using UnityEngine.Purchasing;
 #endif
 
@@ -10,7 +11,7 @@ namespace YsoCorp {
 
         [DefaultExecutionOrder(-10)]
         public class InAppManager : BaseManager
-#if UNITY_PURCHASING
+#if IN_APP_PURCHASING
             , IStoreListener
 #endif
             {
@@ -19,7 +20,7 @@ namespace YsoCorp {
 
             public UnityEventInAppBuy onPurchased { get; set; } = new UnityEventInAppBuy();
 
-#if UNITY_PURCHASING
+#if IN_APP_PURCHASING
             private IStoreController _StoreController = null;
             private IExtensionProvider _StoreExtensionProvider = null;
 #endif
@@ -27,7 +28,7 @@ namespace YsoCorp {
                 base.Awake();
             }
 
-#if UNITY_PURCHASING
+#if IN_APP_PURCHASING
             void Start() {
                 this.Init();
             }
@@ -55,9 +56,18 @@ namespace YsoCorp {
                 return null;
             }
 #endif
+            public string GetProductPrice(string productId) {
+#if IN_APP_PURCHASING
+                Product p = this.GetProductById(productId);
+                if (p != null) {
+                    return p.metadata.localizedPriceString;
+                }
+#endif
+                return "";
+            }
 
             public void BuyProductID(string productId) {
-#if UNITY_PURCHASING
+#if IN_APP_PURCHASING
                 if (this.IsInitialized()) {
                     Product product = this.GetProductById(productId);
                     if (product != null && product.availableToPurchase) {
@@ -73,7 +83,7 @@ namespace YsoCorp {
             }
 
             public void RestorePurchases() {
-#if UNITY_PURCHASING
+#if IN_APP_PURCHASING
                 if (!this.IsInitialized()) {
                     Debug.Log("RestorePurchases FAIL. Not initialized.");
                     return;
@@ -91,7 +101,7 @@ namespace YsoCorp {
 #endif
             }
 
-#if UNITY_PURCHASING
+#if IN_APP_PURCHASING
             public void OnInitialized(IStoreController controller, IExtensionProvider extensions) {
                 Debug.Log("OnInitialized: PASS");
                 this._StoreController = controller;
@@ -103,7 +113,14 @@ namespace YsoCorp {
             }
 
             public PurchaseProcessingResult ProcessPurchase(PurchaseEventArgs args) {
-                this.onPurchased.Invoke(args.purchasedProduct.definition.id);
+                string productId = args.purchasedProduct.definition.id;
+                Product p = this.GetProductById(productId);
+                if (p != null) {
+                    float price = (float)p.metadata.localizedPrice;
+                    string isoCurrencyCode = p.metadata.isoCurrencyCode;
+                    this.ycManager.analyticsManager.InAppBought(productId, price, isoCurrencyCode);
+                }
+                this.onPurchased.Invoke(productId);
                 return PurchaseProcessingResult.Complete;
             }
 
